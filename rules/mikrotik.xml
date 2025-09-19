@@ -1,0 +1,47 @@
+<!-- Author: Denis-Florin Rendler  -->
+<!-- Source: https://github.dev/root-security-eu/notes-monitor-mikrotik-with-wazuh -->
+<group name="mikrotik">
+
+    <!--Alert when an IP in restricted range is assigned-->
+    <rule id="109011" level="12">
+        <decoded_as>mikrotik_dhcp</decoded_as>
+        <field name="assigned_ip" type="pcre2">^10\.140\.[0-9]{1,2}\.22[0-9]$</field>
+        <field name="act">assigned</field>
+        <description>CRITICAL: DHCP $(act) address in restricted range: $(assigned_ip) to $(mac_addr) [$(device)]</description>
+    </rule>
+
+    <!--Alert when user password gets changed-->
+    <rule id="109012" level="12">
+        <decoded_as>mikrotik_user_pass_change</decoded_as>
+        <description>CRITICAL: user [$(subject)] password was changed by $(author)</description>
+        <no_delay />
+    </rule>
+
+    <!--Alert when user attributes gets changed-->
+    <rule id="109013" level="12">
+        <decoded_as>mikrotik_user_change</decoded_as>
+        <description>$(author) has $(act) $(subject) [ $(rule_details) ]</description>
+        <no_delay />
+    </rule>
+    
+    <!--Alert when an auth failure occurs-->
+    <rule id="109014" level="10">
+        <decoded_as>mikrotik_auth_failure</decoded_as>
+        <description>$(username) has failed to login $(subject) via $(access_method)</description>
+    </rule>
+
+    <!--Alert when multiple failures occur in short succession    -->
+    <rule id="109015" level="12" frequency="3" timeframe="300">
+        <if_matched_sid>109014</if_matched_sid>
+        <same_source_ip />
+        <description>$(username) has failed to login $(subject) via $(access_method) multiple times. Possible brute force attack.</description>
+        <group>authentication_failures,brute_force,pci_dss_11.4,</group>
+    </rule>
+
+    <!--Alert when a config is changed. This can be a lower level as it might be part of BAU-->
+    <rule id="109016" level="10">
+        <decoded_as>mikrotik_config</decoded_as>
+        <description>$(author) has $(act) a config [ $(logtype) ] from $(srcip) - [ $(command) ]</description>
+    </rule>
+
+</group>

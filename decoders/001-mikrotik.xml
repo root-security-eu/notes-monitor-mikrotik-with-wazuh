@@ -1,0 +1,71 @@
+<!-- Author: Denis-Florin Rendler  -->
+<!-- Source: https://github.dev/root-security-eu/notes-monitor-mikrotik-with-wazuh -->
+<decoder name="mikrotik">
+    <prematch>^MKT[\d+][\S+]</prematch>
+    <type>syslog</type>
+</decoder>
+
+<!--DHCP Logs-->
+<decoder name="mikrotik_dhcp">
+    <parent>mikrotik</parent>
+    <use_own_name>true</use_own_name>
+    <prematch type="pcre2"> (assigned|deassigned) </prematch>
+    <regex type="pcre2">(\S+) (assigned|deassigned) (\S+) for (\S+)\s*(\S*)</regex>
+    <order>vlan,act,assigned_ip,mac_addr,device</order>
+</decoder>
+<!--END DHCP Logs-->
+
+<!--AUTH Logs-->
+<decoder name="mikrotik_auth_login">
+    <parent>mikrotik</parent>
+    <use_own_name>true</use_own_name>
+    <prematch>logged in from</prematch>
+    <regex>user (\S+) (logged in) from (\S+) via (\S+)</regex>
+    <order>user,act,srcip,service</order>
+</decoder>
+
+<decoder name="mikrotik_auth_logout">
+    <parent>mikrotik</parent>
+    <use_own_name>true</use_own_name>
+    <prematch>logged out from</prematch>
+    <regex>user (\S+) (logged out) from (\S+) via (\S+)</regex>
+    <order>user,act,srcip,service</order>
+</decoder>
+
+<decoder name="mikrotik_auth_failure">
+    <parent>mikrotik</parent>
+    <use_own_name>true</use_own_name>
+    <prematch>login failure for user</prematch>
+    <regex>(login failure) for user (\S+) from (\S+) via (\S+)</regex>
+    <order>act,username,srcip,access_method</order>
+</decoder>
+<!--END Auth Logs-->
+
+<!--USER logs-->
+<decoder name="mikrotik_user_change">
+    <parent>mikrotik</parent>
+	<use_own_name>true</use_own_name>
+    <prematch type="pcre2">user (\S+) (added|changed|removed) by</prematch>
+    <regex type="pcre2">user (\S+) (added|changed|removed) by (\S+):(\S+)@(\S+) \((.*)\)</regex>
+    <order>subject,act,protocol,author,srcip,rule_details</order>
+</decoder>
+
+<decoder name="mikrotik_user_pass_change">
+    <parent>mikrotik</parent>
+	<use_own_name>true</use_own_name>
+    <prematch type="pcre2">user (\S+) (password changed) by</prematch>
+    <regex type="pcre2">user (\S+) (password changed) by (\S+)</regex>
+    <order>subject,act,author</order>
+</decoder>
+<!--END USER logs-->
+
+<!--CONFIG logs-->
+<decoder name="mikrotik_config">
+	<parent>mikrotik</parent>
+	<use_own_name>true</use_own_name>
+    <prematch type="pcre2">(changed|removed|added) by</prematch>
+    <regex type="pcre2" offset="after_parent">^:\s+(.+) (changed|removed|added) by (\S+):(\S+)@(\S+) \((.*)\)</regex>
+    <order>logtype,act,protocol,author,srcip,command</order>
+</decoder>
+
+<!--END CONFIG logs-->
